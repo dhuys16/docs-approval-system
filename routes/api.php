@@ -28,4 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/permohonan/{id}/review', [PenilaiController::class, 'review']);
         Route::get('/histori', [PenilaiController::class, 'historiPenilaian']);
     });
+
+    // Dashboard Stats (Bisa diakses Pemohon & Penilai)
+    Route::get('/dashboard/stats', [DashboardController::class, 'index']);
 });
