@@ -7,6 +7,7 @@ use App\Models\Permohonan;
 use App\Models\RiwayatPenilaian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class PenilaiController extends Controller
 {
@@ -54,6 +55,8 @@ class PenilaiController extends Controller
                 'catatan' => $validated['catatan'],
             ]);
 
+            Cache::flush();
+            
             return response()->json([
                 'message' => "Keputusan penilaian berhasil disimpan ($statusBaru)",
                 'data' => $permohonan->load(['dokumen', 'riwayat.penilai']),

@@ -9,6 +9,7 @@ use App\Models\RiwayatPenilaian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class PermohonanController extends Controller
 {
@@ -131,6 +132,8 @@ class PermohonanController extends Controller
                     'catatan' => 'Perbaikan permohonan dikirim kembali',
                 ]);
             }
+
+            Cache::flush();
 
             return response()->json([
                 'message' => 'Permohonan berhasil diperbarui',

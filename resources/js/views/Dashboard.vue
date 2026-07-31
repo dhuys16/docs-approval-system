@@ -54,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import api from '../axios';
 
 const stats = ref({
@@ -67,9 +67,10 @@ const stats = ref({
 });
 
 const loading = ref(true);
+let timer = null;
 
-const fetchStats = async () => {
-  loading.value = true;
+const fetchStats = async (isBackground = false) => {
+  if (!isBackground) loading.value = true;
   try {
     const res = await api.get('/dashboard/stats');
     stats.value = res.data.statistics;
@@ -82,5 +83,15 @@ const fetchStats = async () => {
 
 onMounted(() => {
   fetchStats();
+  
+  // Auto-refresh data setiap 5 detik (Polling)
+  timer = setInterval(() => {
+    fetchStats(true);
+  }, 5000);
+});
+
+// Bersihkan timer saat pengguna berpindah halaman
+onUnmounted(() => {
+  if (timer) clearInterval(timer);
 });
 </script>
