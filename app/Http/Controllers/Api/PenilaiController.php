@@ -15,6 +15,7 @@ class PenilaiController extends Controller
     public function index(Request $request)
     {
         $query = Permohonan::with(['pemohon:id,name,email', 'dokumen'])
+            ->where('status', '!=', 'draft')
             ->latest();
 
         if ($request->status) {
@@ -31,15 +32,81 @@ class PenilaiController extends Controller
         return response()->json($query->paginate(15));
     }
 
+    public function exportExcel(Request $request)
+    {
+        $query = Permohonan::with(['pemohon:id,name,email', 'dokumen'])
+            ->where('status', '!=', 'draft')
+            ->latest();
+
+        if ($request->search) {
+            $query->where(function ($q) use ($request) {
+                $q->where('nomor_permohonan', 'LIKE', "%{$request->search}%")
+                  ->orWhere('judul_project', 'LIKE', "%{$request->search}%");
+            });
+        }
+
+        $permohonan = $query->get();
+
+        $filename = "Data_Permohonan_Penilai_" . date('Y-m-d_H-i-s') . ".csv";
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['No', 'Nomor Permohonan', 'Nama Pemohon', 'Email', 'Judul Project', 'Status', 'Tanggal Pengajuan'];
+
+        $callback = function() use($permohonan, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            $rowCounter = 1;
+            foreach ($permohonan as $p) {
+                $row = [
+                    $rowCounter++,
+                    $p->nomor_permohonan,
+                    $p->pemohon->name ?? '-',
+                    $p->pemohon->email ?? '-',
+                    $p->judul_project,
+                    $p->status,
+                    $p->created_at->format('Y-m-d H:i:s'),
+                ];
+                fputcsv($file, $row);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // Detail Permohonan untuk Penilai
+    public function show($nomorPermohonan)
+    {
+        $permohonan = Permohonan::with(['pemohon:id,name,email', 'dokumen', 'riwayat.penilai:id,name'])
+                        ->where('nomor_permohonan', $nomorPermohonan)
+                        ->first();
+
+        if (!$permohonan) {
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'data' => $permohonan
+        ]);
+    }
+
     // Proses Penilaian (Approved / Revisi / Rejected)
-    public function review(Request $request, $id)
+    public function review(Request $request, $nomorPermohonan)
     {
         $validated = $request->validate([
             'status' => 'required|in:approved,revisi,rejected',
             'catatan' => 'required|string|min:5', // Catatan wajib diisi saat review
         ]);
 
-        $permohonan = Permohonan::findOrFail($id);
+        $permohonan = Permohonan::where('nomor_permohonan', $nomorPermohonan)->firstOrFail();
 
         return DB::transaction(function () use ($request, $permohonan, $validated) {
             $statusLama = $permohonan->status;

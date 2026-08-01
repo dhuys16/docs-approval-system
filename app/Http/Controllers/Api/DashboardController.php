@@ -33,6 +33,24 @@ class DashboardController extends Controller
                     $query->where('pemohon_id', $user->id);
                 }
 
+                // Data grafik berdasar waktu (7 hari terakhir)
+                $recent = (clone $query)
+                    ->where('created_at', '>=', now()->subDays(6)->startOfDay())
+                    ->get(['created_at']);
+                
+                $timeSeries = [];
+                for ($i = 6; $i >= 0; $i--) {
+                    $date = now()->subDays($i)->format('Y-m-d');
+                    $timeSeries[$date] = 0;
+                }
+
+                foreach ($recent as $item) {
+                    $date = $item->created_at->format('Y-m-d');
+                    if (isset($timeSeries[$date])) {
+                        $timeSeries[$date]++;
+                    }
+                }
+
                 return [
                     'total' => (clone $query)->count(),
                     'draft' => (clone $query)->where('status', 'draft')->count(),
@@ -40,6 +58,7 @@ class DashboardController extends Controller
                     'revisi' => (clone $query)->where('status', 'revisi')->count(),
                     'approved' => (clone $query)->where('status', 'approved')->count(),
                     'rejected' => (clone $query)->where('status', 'rejected')->count(),
+                    'time_series' => $timeSeries,
                 ];
             });
 

@@ -1,181 +1,157 @@
 <template>
-  <div class="space-y-6 max-w-4xl mx-auto pb-12">
-    <!-- Header Navigation -->
-    <div class="flex items-center justify-between">
-      <button @click="$router.back()" class="text-xs font-bold text-slate-500 hover:text-indigo-600 flex items-center gap-1">
+  <div class="max-w-5xl mx-auto p-6 bg-white shadow-md rounded-lg mt-8">
+    <div class="flex justify-between items-center border-b pb-4 mb-6">
+      <h2 class="text-2xl font-bold text-gray-800">Detail Permohonan Dokumen</h2>
+      <button @click="goBack" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">
         &larr; Kembali
       </button>
-      <span v-if="permohonan.status" :class="statusClass(permohonan.status)" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
-        {{ permohonan.status }}
-      </span>
     </div>
 
-    <!-- Informasi Permohonan -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
-      <div class="border-b border-slate-100 pb-3">
-        <span class="text-[10px] font-mono font-bold text-indigo-600 uppercase tracking-wider">No. Permohonan</span>
-        <h1 class="text-xl font-bold text-slate-800">{{ permohonan.nomor_permohonan || '-' }}</h1>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div>
-          <span class="text-slate-400 font-semibold block uppercase">Judul Project</span>
-          <p class="text-slate-800 font-bold text-sm">{{ permohonan.judul_project || '-' }}</p>
-        </div>
-        <div>
-          <span class="text-slate-400 font-semibold block uppercase">Pemohon</span>
-          <p class="text-slate-800 font-bold">{{ permohonan.pemohon?.name || '-' }}</p>
-          <p class="text-slate-400 text-[11px]">{{ permohonan.pemohon?.email || '' }}</p>
-        </div>
-      </div>
-
-      <div>
-        <span class="text-slate-400 font-semibold block text-xs uppercase mb-1">Deskripsi</span>
-        <p class="text-slate-700 text-xs leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-          {{ permohonan.deskripsi || 'Tidak ada deskripsi.' }}
-        </p>
-      </div>
-
-      <!-- Lampiran Dokumen -->
-      <div>
-        <span class="text-slate-400 font-semibold block text-xs uppercase mb-1">Lampiran Dokumen</span>
-        <div v-if="permohonan.dokumen?.length" class="flex items-center gap-2">
-          <a
-            :href="`/storage/${permohonan.dokumen[0].file_path}`"
-            target="_blank"
-            class="px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition inline-flex items-center gap-1.5"
-          >
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            {{ permohonan.dokumen[0].nama_file }}
-          </a>
-        </div>
-        <span v-else class="text-xs text-slate-400 italic">Tidak ada dokumen dilampirkan.</span>
-      </div>
+    <!-- 1. State Loading: Mencegah layar putih saat Axios sedang mengambil data -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-16">
+      <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="text-gray-500 font-medium">Memuat data permohonan...</p>
     </div>
 
-    <!-- PANEL KHUSUS PENILAI -->
-    <div v-if="isPenilai" class="bg-white rounded-xl border border-indigo-200 shadow-md p-6 space-y-4">
-      <div class="border-b border-slate-100 pb-2">
-        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-          <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Form Keputusan Penilai
-        </h3>
-        <p class="text-[11px] text-slate-400">Tentukan keputusan status permohonan dan berikan catatan penilaian.</p>
-      </div>
-
-      <form @submit.prevent="submitReview" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Pilih Status Keputusan</label>
-          <select v-model="reviewForm.status" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="approved">Approved (Setujui)</option>
-            <option value="revisi">Revisi (Minta Perbaikan)</option>
-            <option value="rejected">Rejected (Tolak)</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Catatan Penilaian (Wajib, Min 5 Karakter)</label>
-          <textarea
-            v-model="reviewForm.catatan"
-            rows="4"
-            required
-            placeholder="Berikan alasan keputusan atau petunjuk perbaikan jika revisi..."
-            class="w-full border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          ></textarea>
-        </div>
-
-        <div class="flex justify-end pt-2">
-          <button
-            type="submit"
-            :disabled="submitting || reviewForm.catatan.trim().length < 5"
-            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow transition disabled:opacity-50"
-          >
-            {{ submitting ? 'Menyimpan...' : 'Simpan Keputusan' }}
-          </button>
-        </div>
-      </form>
+    <!-- 2. State Error: Jika API gagal dipanggil (misal 404 atau 500) -->
+    <div v-else-if="error" class="text-center py-16 bg-red-50 rounded-lg border border-red-100">
+      <p class="text-red-600 text-lg font-medium">{{ error }}</p>
+      <button @click="fetchDetail" class="mt-4 px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+        Coba Lagi
+      </button>
     </div>
 
-    <!-- Riwayat Catatan / Penilaian -->
-    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-3">
-      <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Riwayat Catatan Penilaian</h3>
-      <div v-if="permohonan.riwayat?.length" class="space-y-3 divide-y divide-slate-100">
-        <div v-for="r in permohonan.riwayat" :key="r.id" class="pt-3 first:pt-0 space-y-1">
-          <div class="flex justify-between items-center text-[11px]">
-            <span class="font-bold text-slate-700">{{ r.user?.name || 'Penilai' }}</span>
-            <span class="text-slate-400">{{ new Date(r.created_at).toLocaleString('id-ID') }}</span>
+    <!-- 3. State Sukses: Data berhasil didapat dan siap di-render -->
+    <div v-else-if="permohonan">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- Kolom Kiri: Informasi Data -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Informasi Data</h3>
+          <div class="space-y-4">
+            <div>
+              <span class="block text-sm text-gray-500">Judul Project / Permohonan</span>
+              <span class="font-medium text-gray-900 text-lg">{{ permohonan.judul_project || permohonan.nama_project || 'Tidak ada judul' }}</span>
+            </div>
+            
+            <div>
+              <span class="block text-sm text-gray-500">Status Saat Ini</span>
+              <span class="inline-block mt-1 px-3 py-1 text-sm font-semibold rounded-full"
+                    :class="{
+                      'bg-yellow-100 text-yellow-800': permohonan.status === 'Draft' || permohonan.status === 'Pending',
+                      'bg-blue-100 text-blue-800': permohonan.status === 'Revisi',
+                      'bg-green-100 text-green-800': permohonan.status === 'Approved' || permohonan.status === 'Disetujui',
+                      'bg-red-100 text-red-800': permohonan.status === 'Rejected' || permohonan.status === 'Ditolak'
+                    }">
+                {{ permohonan.status }}
+              </span>
+            </div>
+
+            <div>
+              <span class="block text-sm text-gray-500">Tanggal Pengajuan</span>
+              <span class="font-medium text-gray-900">
+                {{ permohonan.created_at ? new Date(permohonan.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' }}
+              </span>
+            </div>
+
+            <!-- Tampil jika ada catatan dari Penilai -->
+            <div v-if="permohonan.catatan">
+              <span class="block text-sm text-gray-500 mb-1">Catatan Penilai</span>
+              <div class="bg-gray-50 p-4 rounded border text-gray-700 text-sm">
+                {{ permohonan.catatan }}
+              </div>
+            </div>
           </div>
-          <span :class="statusClass(r.status)" class="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase">
-            {{ r.status }}
-          </span>
-          <p class="text-xs text-slate-600 pt-1 italic">"{{ r.catatan }}"</p>
+        </div>
+
+        <!-- Kolom Kanan: Pratinjau Dokumen -->
+        <div>
+          <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">Dokumen Lampiran</h3>
+          
+          <div v-if="permohonan.dokumen && permohonan.dokumen.length > 0" class="space-y-4">
+             <!-- Pastikan layout gambar menggunakan contain agar dokumen tidak terpotong (cropped) saat ditampilkan -->
+             <div v-for="doc in permohonan.dokumen" :key="doc.id" class="border rounded-lg p-2 bg-gray-50 h-80 flex flex-col items-center justify-center relative mb-4">
+                <img 
+                  v-if="isImage(doc.file_path || doc.nama_file)" 
+                  :src="`/storage/${doc.file_path}`" 
+                  alt="Dokumen Permohonan" 
+                  class="w-full h-full object-contain rounded" 
+                />
+                
+                <div v-else class="text-center w-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <p class="text-gray-600 mb-2 truncate px-2 font-medium">{{ doc.nama_file || 'Dokumen' }}</p>
+                  <a :href="`/storage/${doc.file_path}`" target="_blank" class="px-4 py-2 mt-2 inline-block bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    Unduh / Lihat Dokumen
+                  </a>
+                </div>
+             </div>
+          </div>
+          
+          <div v-else class="border border-dashed border-gray-300 rounded-lg p-10 h-64 flex items-center justify-center bg-gray-50 text-gray-500">
+            Tidak ada dokumen yang dilampirkan.
+          </div>
         </div>
       </div>
-      <p v-else class="text-xs text-slate-400 italic">Belum ada riwayat catatan.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '../axios';
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+// Import file custom Axios buatan Anda yang menyimpan token & baseURL /api
+import api from '../axios.js'; 
 
 const route = useRoute();
-const permohonan = ref({});
-const submitting = ref(false);
+const router = useRouter();
 
-// Deteksi Role Penilai secara fleksibel (pemeriksaan langsung dari localStorage)
-const isPenilai = computed(() => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const rawRole = localStorage.getItem('role') || user.role || user.role_name || '';
-  return String(rawRole).toLowerCase() === 'penilai';
-});
-
-const reviewForm = ref({
-  status: 'approved',
-  catatan: '',
-});
+// State management
+const permohonan = ref(null);
+const loading = ref(true);
+const error = ref(null);
 
 const fetchDetail = async () => {
+  loading.value = true;
+  error.value = null;
+  
   try {
-    const res = await api.get(`/permohonan/${route.params.nomor_permohonan}`);
+    // Memanggil API berdasarkan ID yang dikirim melalui URL parameter di Vue Router
+    // Karena axios.js sudah menggunakan baseURL '/api', kita cukup memanggil '/permohonan/{id}'
+    // INFO: Jika URL endpoint backend Anda berbeda (misal: /pengajuan), ubah string ini
+    const response = await api.get(`/pemohon/permohonan/${route.params.nomor_permohonan}`);
     
-    // Cek jika response ternyata HTML (bukan Object JSON)
-    if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) {
-      console.error('ERROR: API mengembalikan HTML, route /api/permohonan/... belum terdaftar di routes/api.php!');
-      return;
-    }
-
-    // Assign data JSON
-    permohonan.value = res.data.data || res.data;
-    console.log('DATA PERMOHONAN BERHASIL DILOAD:', permohonan.value);
-
+    // Laravel Resource biasanya membungkus respons di dalam key 'data'
+    // Kode ini secara pintar mengecek apakah data dibungkus 1x atau 2x
+    permohonan.value = response.data.data ? response.data.data : response.data;
+    
+    console.log("Berhasil! Data Permohonan:", permohonan.value);
   } catch (err) {
-    console.error('Gagal mengambil detail:', err);
-  }
-};
-
-const submitReview = async () => {
-  submitting.value = true;
-  try {
-    await api.post(`/penilai/permohonan/${permohonan.value.id}/review`, reviewForm.value);
-    alert('Keputusan berhasil disimpan!');
-    fetchDetail();
-  } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menyimpan keputusan.');
+    console.error("Gagal mengambil data:", err.response?.status, err.response?.data, err);
+    error.value = err.response?.data?.message || `Gagal mengambil data (HTTP ${err.response?.status || 'unknown'})`;
   } finally {
-    submitting.value = false;
+    loading.value = false;
   }
 };
 
-const statusClass = (status) => ({
-  draft: 'bg-slate-100 text-slate-600',
-  submitted: 'bg-blue-100 text-blue-700',
-  revisi: 'bg-amber-100 text-amber-700',
-  approved: 'bg-emerald-100 text-emerald-700',
-  rejected: 'bg-rose-100 text-rose-700',
-}[status] || 'bg-slate-100 text-slate-600');
+// Mengecek ekstensi file secara sederhana untuk memutuskan render tag <img> atau <a>
+const isImage = (url) => {
+  if (!url) return false;
+  return /\.(jpeg|jpg|png|webp)$/i.test(url);
+};
 
-onMounted(fetchDetail);
+// Fungsi tombol kembali
+const goBack = () => {
+  router.back();
+};
+
+// Eksekusi fungsi saat komponen di-load
+onMounted(() => {
+  fetchDetail();
+});
 </script>

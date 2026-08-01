@@ -23,8 +23,12 @@ class AuthController extends Controller
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role'     => $validated['role'] ?? 'pemohon',
         ]);
+
+        $role = $validated['role'] ?? 'pemohon';
+        if (method_exists($user, 'assignRole')) {
+            $user->assignRole($role);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -65,7 +69,18 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        $user = $request->user();
+        $role = 'pemohon';
+        if (method_exists($user, 'getRoleNames') && $user->getRoleNames()->first()) {
+            $role = $user->getRoleNames()->first();
+        } elseif (isset($user->role)) {
+            $role = $user->role;
+        }
+
+        $userData = $user->toArray();
+        $userData['role'] = $role;
+
+        return response()->json($userData);
     }
 
     public function logout(Request $request)

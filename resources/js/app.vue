@@ -1,6 +1,6 @@
 <template>
   <!-- Jika di halaman login, tampilkan langsung tanpa navbar/sidebar -->
-  <div v-if="$route.name === 'Login'">
+  <div v-if="$route.name === 'Login' || $route.name === 'Register'">
     <router-view></router-view>
   </div>
 
@@ -29,6 +29,7 @@
         </router-link>
 
         <router-link
+          v-if="user?.role === 'pemohon'"
           to="/permohonan"
           class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition"
           :class="$route.path.startsWith('/permohonan') ? 'bg-indigo-600 text-white font-semibold shadow' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'"
@@ -38,6 +39,7 @@
         </router-link>
 
         <router-link
+          v-if="user?.role === 'penilai'"
           to="/penilai"
           class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg transition"
           :class="$route.path.startsWith('/penilai') ? 'bg-indigo-600 text-white font-semibold shadow' : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'"

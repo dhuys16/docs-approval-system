@@ -26,6 +26,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route khusus Penilai (Tambahkan middleware role jika ada)
     Route::prefix('penilai')->middleware('role:penilai')->group(function () {
         Route::get('/permohonan', [PenilaiController::class, 'index']);
+        Route::get('/permohonan/export', [PenilaiController::class, 'exportExcel']);
+        Route::get('/permohonan/{nomor_permohonan}', [PenilaiController::class, 'show']);
         Route::post('/permohonan/{nomor_permohonan}/review', [PenilaiController::class, 'review']);
         Route::get('/histori', [PenilaiController::class, 'historiPenilaian']);
     });

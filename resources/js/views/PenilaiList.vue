@@ -7,18 +7,28 @@
         <p class="text-xs text-slate-500">Daftar permohonan masuk yang memerlukan peninjauan dan penilaian.</p>
       </div>
 
-      <!-- Search Box -->
-      <div class="relative">
-        <input
-          v-model="search"
-          @input="fetchData(1)"
-          type="text"
-          placeholder="Cari No. Permohonan / Judul..."
-          class="border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs w-64 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-        <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
+      <!-- Search Box & Export -->
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <input
+            v-model="search"
+            @input="fetchData(1)"
+            type="text"
+            placeholder="Cari No. Permohonan / Judul..."
+            class="border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-xs w-64 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          />
+          <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        
+        <button
+          @click="exportData"
+          class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition text-xs"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Export
+        </button>
       </div>
     </div>
 
@@ -39,7 +49,7 @@
           <tr v-for="item in pagination.data" :key="item.id" class="hover:bg-slate-50 transition">
             <!-- Link Nomor Permohonan -->
             <td class="p-4 font-bold text-indigo-600">
-              <router-link :to="`/permohonan/${item.nomor_permohonan}`" class="hover:underline">
+              <router-link :to="`/penilai/permohonan/${item.nomor_permohonan}`" class="hover:underline">
                 {{ item.nomor_permohonan }}
               </router-link>
             </td>
@@ -68,7 +78,7 @@
             <td class="p-4 text-center">
               <!-- Hanya Tombol Detail -->
               <router-link
-                :to="`/permohonan/${item.nomor_permohonan}`"
+                :to="`/penilai/permohonan/${item.nomor_permohonan}`"
                 class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition inline-block text-[11px]"
               >
                 Detail
@@ -123,6 +133,24 @@ const fetchData = async (page = 1) => {
     pagination.value = res.data;
   } catch (err) {
     console.error(err);
+  }
+};
+
+const exportData = async () => {
+  try {
+    const res = await api.get('/penilai/permohonan/export', {
+      params: { search: search.value },
+      responseType: 'blob'
+    });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Data_Permohonan_Penilai_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error('Gagal export data', err);
   }
 };
 

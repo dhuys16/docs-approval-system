@@ -76,26 +76,28 @@ class PermohonanController extends Controller
         });
     }
 
-    public function show($nomor_permohonan)
+    public function show($identifier)
     {
-        $permohonan = Permohonan::with(['pemohon', 'dokumen', 'riwayat.user'])
-            ->where('nomor_permohonan', $nomor_permohonan)
-            ->first();
+        // Gunakan klausa 'where' untuk mencari berdasarkan kolom nomor/kode permohonan
+        // Pastikan nama kolom 'nomor_permohonan' disesuaikan dengan yang ada di database Anda
+        $permohonan = Permohonan::with(['dokumen', 'riwayat'])
+                        ->where('nomor_permohonan', $identifier)
+                        ->first();
 
         if (!$permohonan) {
-            return response()->json([
-                'message' => 'Data permohonan tidak ditemukan'
-            ], 404);
+            return response()->json(['message' => 'Data tidak ditemukan'], 404);
         }
 
         return response()->json([
             'data' => $permohonan
-        ], 200);
-    }
+        ]);
+}
     // Update / Re-submit Permohonan Revisi
-    public function update(Request $request, $id)
+    public function update(Request $request, $nomor_permohonan)
     {
-        $permohonan = Permohonan::where('pemohon_id', $request->user()->id)->findOrFail($id);
+        $permohonan = Permohonan::where('pemohon_id', $request->user()->id)
+            ->where('nomor_permohonan', $nomor_permohonan)
+            ->firstOrFail();
 
         if (!in_array($permohonan->status, ['draft', 'revisi'])) {
             return response()->json(['message' => 'Permohonan tidak dapat diubah pada status ini'], 422);

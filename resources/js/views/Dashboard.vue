@@ -40,38 +40,140 @@
       </div>
     </div>
 
-    <!-- Banner Quick Navigation -->
-    <div class="bg-slate-900 text-white p-6 rounded-xl flex items-center justify-between shadow-lg">
-      <div>
-        <h2 class="text-lg font-bold">Akses Menu Pengelolaan</h2>
-        <p class="text-xs text-slate-400 mt-1">Kelola permohonan atau lakukan review dokumen sesuai kewenangan Anda.</p>
+    <!-- Chart Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Grafik Status Permohonan</h2>
+        <div class="relative w-full h-72">
+          <canvas ref="chartCanvas"></canvas>
+        </div>
       </div>
-      <div class="flex gap-3">
-        <router-link to="/permohonan" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg transition">
-          Menu Pemohon
-        </router-link>
-        <router-link to="/penilai" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
-          Menu Penilai
-        </router-link>
+
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wider">Tren Permohonan (7 Hari Terakhir)</h2>
+        <div class="relative w-full h-72">
+          <canvas ref="timeChartCanvas"></canvas>
+        </div>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import api from '../axios';
+import Chart from 'chart.js/auto';
 
 const stats = ref({});
 const role = ref('');
+const chartCanvas = ref(null);
+const timeChartCanvas = ref(null);
+let chartInstance = null;
+let timeChartInstance = null;
 
 onMounted(async () => {
   try {
     const res = await api.get('/dashboard/stats');
     stats.value = res.data.statistics || {};
     role.value = res.data.role || 'pemohon';
+
+    await nextTick();
+    renderChart();
   } catch (err) {
     console.error('Gagal mengambil statistik dashboard', err);
   }
 });
+
+const renderChart = () => {
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+  if (timeChartInstance) {
+    timeChartInstance.destroy();
+  }
+
+  if (chartCanvas.value) {
+    chartInstance = new Chart(chartCanvas.value, {
+      type: 'bar',
+      data: {
+        labels: ['Draft', 'Submitted', 'Revisi', 'Approved', 'Rejected'],
+        datasets: [{
+          label: 'Jumlah Permohonan',
+          data: [
+            stats.value.draft || 0,
+            stats.value.submitted || 0,
+            stats.value.revisi || 0,
+            stats.value.approved || 0,
+            stats.value.rejected || 0,
+          ],
+          backgroundColor: [
+            '#cbd5e1', // draft
+            '#3b82f6', // submitted
+            '#f59e0b', // revisi
+            '#10b981', // approved
+            '#f43f5e', // rejected
+          ],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+
+  if (timeChartCanvas.value && stats.value.time_series) {
+    const timeLabels = Object.keys(stats.value.time_series);
+    const timeData = Object.values(stats.value.time_series);
+
+    timeChartInstance = new Chart(timeChartCanvas.value, {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: [{
+          label: 'Jumlah Permohonan',
+          data: timeData,
+          borderColor: '#4f46e5',
+          backgroundColor: 'rgba(79, 70, 229, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointBackgroundColor: '#4f46e5',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+  }
+};
 </script>

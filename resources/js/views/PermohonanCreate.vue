@@ -19,7 +19,7 @@
     </div>
 
     <!-- Form Container -->
-    <form @submit.prevent="handleSubmit" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+    <form @submit.prevent="submitForm" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
       
       <!-- Judul Project -->
       <div>
@@ -98,33 +98,32 @@
         </div>
       </div>
 
+      <!-- Opsi Submit -->
+      <div class="flex items-center gap-3 bg-slate-50 p-4 rounded-lg border border-slate-200">
+        <input 
+          type="checkbox" 
+          id="is_submit_directly" 
+          v-model="form.is_submit_directly" 
+          class="w-4 h-4 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500 cursor-pointer"
+        />
+        <label for="is_submit_directly" class="text-xs font-medium text-slate-700 cursor-pointer select-none">
+          Langsung submit permohonan ini untuk dinilai (Hilangkan centang jika ingin menyimpan sebagai Draft terlebih dahulu)
+        </label>
+      </div>
+
       <!-- Action Footer -->
       <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
         <router-link to="/permohonan" class="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-800 transition">
           Batal
         </router-link>
 
-        <div class="flex items-center gap-3">
-          <!-- Button Simpan Draft -->
-          <button
-            type="button"
-            @click="submitForm(false)"
-            :disabled="submitting"
-            class="px-4 py-2.5 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition disabled:opacity-50"
-          >
-            Simpan Draft
-          </button>
-
-          <!-- Button Submit Langsung -->
-          <button
-            type="button"
-            @click="submitForm(true)"
-            :disabled="submitting"
-            class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-50"
-          >
-            {{ submitting ? 'Memproses...' : 'Submit Permohonan' }}
-          </button>
-        </div>
+        <button
+          type="submit"
+          :disabled="submitting"
+          class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-50"
+        >
+          {{ submitting ? 'Memproses...' : (form.is_submit_directly ? 'Submit Permohonan' : 'Simpan Draft') }}
+        </button>
       </div>
     </form>
   </div>
@@ -144,6 +143,7 @@ const errorMessage = ref('');
 const form = ref({
   judul_project: '',
   deskripsi: '',
+  is_submit_directly: false,
 });
 
 const handleFileSelect = (event) => {
@@ -166,7 +166,7 @@ const validateAndSetFile = (file) => {
   errorMessage.value = '';
 };
 
-const submitForm = async (isSubmitDirectly) => {
+const submitForm = async () => {
   if (!form.value.judul_project.trim()) {
     errorMessage.value = 'Judul project wajib diisi.';
     return;
@@ -178,7 +178,7 @@ const submitForm = async (isSubmitDirectly) => {
   const formData = new FormData();
   formData.append('judul_project', form.value.judul_project);
   formData.append('deskripsi', form.value.deskripsi);
-  formData.append('is_submit', isSubmitDirectly ? '1' : '0');
+  formData.append('is_submit', form.value.is_submit_directly ? '1' : '0');
   if (selectedFile.value) {
     formData.append('dokumen', selectedFile.value);
   }
