@@ -1,97 +1,77 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center">
+    <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Dashboard Statistik</h1>
-        <p class="text-sm text-gray-500">Ringkasan status pengajuan permohonan</p>
+        <h1 class="text-2xl font-bold text-slate-800">Dashboard Overview</h1>
+        <p class="text-xs text-slate-500">Statistik permohonan real-time berdasarkan hak akses Anda (Role: <span class="font-bold uppercase text-indigo-600">{{ role }}</span>)</p>
       </div>
-      <button
-        @click="fetchStats"
-        class="text-sm bg-white border border-gray-300 hover:bg-gray-50 px-3 py-1.5 rounded-md text-gray-700 shadow-sm transition"
-      >
-        Refresh Data
-      </button>
     </div>
 
-    <!-- Indicator Loading -->
-    <div v-if="loading" class="text-center py-12 text-gray-500">
-      Memuat data statistik dari cache...
+    <!-- Cards Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[10px] font-bold text-slate-400 uppercase">Total</p>
+        <p class="text-2xl font-extrabold text-slate-800 mt-1">{{ stats.total || 0 }}</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[10px] font-bold text-slate-400 uppercase">Draft</p>
+        <p class="text-2xl font-extrabold text-slate-500 mt-1">{{ stats.draft || 0 }}</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[10px] font-bold text-blue-500 uppercase">Submitted</p>
+        <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ stats.submitted || 0 }}</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[10px] font-bold text-amber-500 uppercase">Revisi</p>
+        <p class="text-2xl font-extrabold text-amber-600 mt-1">{{ stats.revisi || 0 }}</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[10px] font-bold text-emerald-500 uppercase">Approved</p>
+        <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ stats.approved || 0 }}</p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <p class="text-[10px] font-bold text-rose-500 uppercase">Rejected</p>
+        <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ stats.rejected || 0 }}</p>
+      </div>
     </div>
 
-    <!-- Grid Card Stats -->
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-        <p class="text-xs font-semibold text-gray-400 uppercase">Total</p>
-        <p class="text-2xl font-extrabold text-gray-800 mt-1">{{ stats.total }}</p>
+    <!-- Banner Quick Navigation -->
+    <div class="bg-slate-900 text-white p-6 rounded-xl flex items-center justify-between shadow-lg">
+      <div>
+        <h2 class="text-lg font-bold">Akses Menu Pengelolaan</h2>
+        <p class="text-xs text-slate-400 mt-1">Kelola permohonan atau lakukan review dokumen sesuai kewenangan Anda.</p>
       </div>
-
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-gray-400">
-        <p class="text-xs font-semibold text-gray-400 uppercase">Draft</p>
-        <p class="text-2xl font-extrabold text-gray-600 mt-1">{{ stats.draft }}</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-        <p class="text-xs font-semibold text-blue-500 uppercase">Submitted</p>
-        <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ stats.submitted }}</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-yellow-500">
-        <p class="text-xs font-semibold text-yellow-600 uppercase">Revisi</p>
-        <p class="text-2xl font-extrabold text-yellow-600 mt-1">{{ stats.revisi }}</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-green-500">
-        <p class="text-xs font-semibold text-green-600 uppercase">Approved</p>
-        <p class="text-2xl font-extrabold text-green-600 mt-1">{{ stats.approved }}</p>
-      </div>
-
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 border-l-4 border-l-red-500">
-        <p class="text-xs font-semibold text-red-500 uppercase">Rejected</p>
-        <p class="text-2xl font-extrabold text-red-600 mt-1">{{ stats.rejected }}</p>
+      <div class="flex gap-3">
+        <router-link to="/permohonan" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold rounded-lg transition">
+          Menu Pemohon
+        </router-link>
+        <router-link to="/penilai" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg border border-slate-700 transition">
+          Menu Penilai
+        </router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import api from '../axios';
 
-const stats = ref({
-  total: 0,
-  draft: 0,
-  submitted: 0,
-  revisi: 0,
-  approved: 0,
-  rejected: 0,
-});
+const stats = ref({});
+const role = ref('');
 
-const loading = ref(true);
-let timer = null;
-
-const fetchStats = async (isBackground = false) => {
-  if (!isBackground) loading.value = true;
+onMounted(async () => {
   try {
     const res = await api.get('/dashboard/stats');
-    stats.value = res.data.statistics;
+    stats.value = res.data.statistics || {};
+    role.value = res.data.role || 'pemohon';
   } catch (err) {
-    console.error(err);
-  } finally {
-    loading.value = false;
+    console.error('Gagal mengambil statistik dashboard', err);
   }
-};
-
-onMounted(() => {
-  fetchStats();
-  
-  // Auto-refresh data setiap 5 detik (Polling)
-  timer = setInterval(() => {
-    fetchStats(true);
-  }, 5000);
-});
-
-// Bersihkan timer saat pengguna berpindah halaman
-onUnmounted(() => {
-  if (timer) clearInterval(timer);
 });
 </script>

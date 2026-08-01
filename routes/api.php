@@ -1,12 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\PermohonanController;
-use App\Http\Controllers\Api\PenilaiController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\PenilaiController;
+use App\Http\Controllers\Api\PermohonanController;
 use Illuminate\Support\Facades\Route;
 
-// Public
+// Public Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -15,18 +15,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Route khusus Pemohon
-    Route::prefix('pemohon')->group(function () {
+    // Route khusus Pemohon (Tambahkan middleware role jika ada)
+    Route::prefix('pemohon')->middleware('role:pemohon')->group(function () {
         Route::get('/permohonan', [PermohonanController::class, 'index']);
         Route::post('/permohonan', [PermohonanController::class, 'store']);
-        Route::get('/permohonan/{id}', [PermohonanController::class, 'show']);
-        Route::post('/permohonan/{id}', [PermohonanController::class, 'update']);
+        Route::get('/permohonan/{nomor_permohonan}', [PermohonanController::class, 'show']);
+        Route::post('/permohonan/{nomor_permohonan}', [PermohonanController::class, 'update']);
     });
 
-    // Route khusus Penilai
-    Route::prefix('penilai')->group(function () {
+    // Route khusus Penilai (Tambahkan middleware role jika ada)
+    Route::prefix('penilai')->middleware('role:penilai')->group(function () {
         Route::get('/permohonan', [PenilaiController::class, 'index']);
-        Route::post('/permohonan/{id}/review', [PenilaiController::class, 'review']);
+        Route::post('/permohonan/{nomor_permohonan}/review', [PenilaiController::class, 'review']);
         Route::get('/histori', [PenilaiController::class, 'historiPenilaian']);
     });
 

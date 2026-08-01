@@ -1,105 +1,152 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Daftar Permohonan Saya</h1>
-        <p class="text-sm text-gray-500">Kelola dokumen permohonan kelayakan Anda</p>
+        <h1 class="text-2xl font-bold text-slate-800">Daftar Permohonan Saya</h1>
+        <p class="text-xs text-slate-500">Kelola draft dan pengajuan permohonan proyek Anda.</p>
       </div>
-      <button
-        @click="openModal()"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-md text-sm shadow-sm transition"
+      <button 
+        @click="openModal()" 
+        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5"
       >
-        + Buat Permohonan Baru
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Permohonan Baru
       </button>
     </div>
 
-    <!-- Tabel Permohonan -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-      <table class="w-full text-left text-sm text-gray-600">
-        <thead class="bg-gray-50 text-gray-700 font-semibold uppercase text-xs border-b">
+    <!-- Filter Status -->
+    <div class="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-medium">
+      <button
+        v-for="st in ['', 'draft', 'submitted', 'revisi', 'approved', 'rejected']"
+        :key="st"
+        @click="filterStatus = st; fetchPermohonan()"
+        :class="filterStatus === st ? 'bg-indigo-600 text-white font-semibold' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+        class="px-3.5 py-1.5 rounded-lg capitalize transition whitespace-nowrap shadow-sm"
+      >
+        {{ st ? st : 'Semua Status' }}
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <table class="w-full text-left text-xs text-slate-600">
+        <thead class="bg-slate-50 border-b border-slate-200 text-slate-400 font-bold uppercase">
           <tr>
-            <th class="px-4 py-3">No. Permohonan</th>
-            <th class="px-4 py-3">Judul Project</th>
-            <th class="px-4 py-3">Dokumen</th>
-            <th class="px-4 py-3">Status</th>
-            <th class="px-4 py-3">Tanggal</th>
+            <th class="p-4">No. Permohonan</th>
+            <th class="p-4">Judul Project</th>
+            <th class="p-4">Dokumen</th>
+            <th class="p-4">Status</th>
+            <th class="p-4">Catatan Terakhir</th>
+            <th class="p-4 text-center">Aksi</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
-          <tr v-if="loading">
-            <td colspan="5" class="text-center py-8 text-gray-400">Memuat data permohonan...</td>
-          </tr>
-          <tr v-else-if="items.length === 0">
-            <td colspan="5" class="text-center py-8 text-gray-400">Belum ada permohonan yang dibuat.</td>
-          </tr>
-          <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-semibold text-gray-800">{{ item.nomor_permohonan }}</td>
-            <td class="px-4 py-3">{{ item.judul_project }}</td>
-            <td class="px-4 py-3">
-              <span v-if="item.dokumen.length > 0" class="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded">
-                {{ item.dokumen[0].nama_file }}
-              </span>
-              <span v-else class="text-xs text-gray-400">Tanpa File</span>
+        <tbody class="divide-y divide-slate-100">
+          <tr v-for="item in pagination.data" :key="item.id" class="hover:bg-slate-50 transition">
+            <!-- No. Permohonan klik mengarah ke Halaman Detail -->
+            <td class="p-4 font-bold text-indigo-600">
+              <router-link :to="`/permohonan/${item.nomor_permohonan}`" class="hover:underline">
+                {{ item.nomor_permohonan }}
+              </router-link>
             </td>
-            <td class="px-4 py-3">
-              <span :class="statusBadge(item.status)" class="text-xs font-bold px-2 py-1 rounded uppercase">
+            <td class="p-4 font-semibold text-slate-800">{{ item.judul_project }}</td>
+            <td class="p-4">
+              <span v-if="item.dokumen?.length" class="text-slate-600 font-medium">
+                {{ item.dokumen[0].nama_file }} 
+                <span class="text-slate-400 text-[10px]">({{ item.dokumen[0].file_size }} KB)</span>
+              </span>
+              <span v-else class="text-slate-400 italic">Tidak ada</span>
+            </td>
+            <td class="p-4">
+              <span :class="statusClass(item.status)" class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide">
                 {{ item.status }}
               </span>
             </td>
-            <td class="px-4 py-3 text-xs text-gray-500">{{ formatDate(item.created_at) }}</td>
+            <td class="p-4 text-slate-500 max-w-xs truncate">
+              {{ item.riwayat?.[0]?.catatan || '-' }}
+            </td>
+            <td class="p-4 text-center space-x-1.5">
+              <!-- Tombol Navigasi Halaman Detail Baru -->
+              <router-link
+                :to="`/permohonan/${item.nomor_permohonan}`"
+                class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-600 font-bold rounded-lg hover:bg-indigo-100 transition inline-block text-[11px]"
+              >
+                Detail
+              </router-link>
+
+              <!-- Tombol Edit Modal (Hanya jika status Draft / Revisi) -->
+              <button
+                v-if="['draft', 'revisi'].includes(item.status)"
+                @click="openModal(item)"
+                class="px-3 py-1.5 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-100 transition inline-block text-[11px]"
+              >
+                Edit
+              </button>
+            </td>
+          </tr>
+          <tr v-if="!pagination.data?.length">
+            <td colspan="6" class="p-8 text-center text-slate-400 italic">Tidak ada data permohonan.</td>
           </tr>
         </tbody>
       </table>
+
+      <!-- Navigasi Pagination -->
+      <div v-if="pagination.last_page > 1" class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <span>Halaman {{ pagination.current_page }} dari {{ pagination.last_page }}</span>
+        <div class="flex gap-1">
+          <button
+            @click="fetchPermohonan(pagination.current_page - 1)"
+            :disabled="pagination.current_page === 1"
+            class="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+          >
+            Sebelumnya
+          </button>
+          <button
+            @click="fetchPermohonan(pagination.current_page + 1)"
+            :disabled="pagination.current_page === pagination.last_page"
+            class="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+          >
+            Selanjutnya
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Modal Form (Tambah / Edit) -->
-    <div v-if="showModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-lg p-6 max-w-lg w-full space-y-4">
-        <h3 class="text-lg font-bold text-gray-800">Buat Permohonan Baru</h3>
+    <!-- Modal Form (Create / Edit Quick Modal) -->
+    <div v-if="showModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="text-base font-bold text-slate-800">
+            {{ isEdit ? 'Edit Permohonan' : 'Buat Permohonan Baru' }}
+          </h3>
+          <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 font-bold">&times;</button>
+        </div>
 
         <form @submit.prevent="submitForm" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Judul Project</label>
-            <input
-              v-model="form.judul_project"
-              type="text"
-              required
-              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
-            />
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Judul Project <span class="text-rose-500">*</span></label>
+            <input v-model="form.judul_project" required type="text" placeholder="Masukkan judul project" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
-            <textarea
-              v-model="form.deskripsi"
-              rows="3"
-              class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
-            ></textarea>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Deskripsi</label>
+            <textarea v-model="form.deskripsi" rows="3" placeholder="Masukkan deskripsi permohonan..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Upload Dokumen (PDF/Gambar Max 5MB)</label>
-            <input
-              type="file"
-              @change="handleFileUpload"
-              class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-            />
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Upload Dokumen (Max 5MB)</label>
+            <input type="file" @change="e => form.dokumen = e.target.files[0]" class="w-full text-xs text-slate-500 border border-slate-300 rounded-lg p-2" />
           </div>
 
-          <div class="flex justify-end gap-2 pt-4 border-t">
-            <button
-              type="button"
-              @click="showModal = false"
-              class="px-4 py-2 border rounded-md text-sm text-gray-600 hover:bg-gray-50"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              :disabled="submitting"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {{ submitting ? 'Menyimpan...' : 'Kirim Permohonan' }}
+          <div class="flex items-center gap-2 pt-1">
+            <input type="checkbox" id="is_submit" v-model="form.is_submit" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+            <label for="is_submit" class="text-xs font-semibold text-slate-700 cursor-pointer">Langsung Submit untuk Direview?</label>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <button type="button" @click="showModal = false" class="px-4 py-2 text-xs border border-slate-300 font-semibold text-slate-600 rounded-lg hover:bg-slate-50">Batal</button>
+            <button type="submit" :disabled="submitting" class="px-5 py-2 text-xs bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition disabled:opacity-50">
+              {{ submitting ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
         </form>
@@ -112,36 +159,50 @@
 import { ref, onMounted } from 'vue';
 import api from '../axios';
 
-const items = ref([]);
-const loading = ref(true);
+const pagination = ref({});
+const filterStatus = ref('');
 const showModal = ref(false);
+const isEdit = ref(false);
+const selectedId = ref(null);
 const submitting = ref(false);
 
 const form = ref({
   judul_project: '',
   deskripsi: '',
+  is_submit: true,
   dokumen: null,
 });
 
-const fetchPermohonan = async () => {
-  loading.value = true;
+const fetchPermohonan = async (page = 1) => {
   try {
-    const res = await api.get('/pemohon/permohonan');
-    items.value = res.data.data;
+    const res = await api.get('/pemohon/permohonan', { 
+      params: { 
+        status: filterStatus.value,
+        page: page
+      } 
+    });
+    pagination.value = res.data;
   } catch (err) {
     console.error(err);
-  } finally {
-    loading.value = false;
   }
 };
 
-const openModal = () => {
-  form.value = { judul_project: '', deskripsi: '', dokumen: null };
+const openModal = (item = null) => {
+  if (item) {
+    isEdit.value = true;
+    selectedId.value = item.id;
+    form.value = {
+      judul_project: item.judul_project,
+      deskripsi: item.deskripsi || '',
+      is_submit: true,
+      dokumen: null,
+    };
+  } else {
+    isEdit.value = false;
+    selectedId.value = null;
+    form.value = { judul_project: '', deskripsi: '', is_submit: true, dokumen: null };
+  }
   showModal.value = true;
-};
-
-const handleFileUpload = (e) => {
-  form.value.dokumen = e.target.files[0];
 };
 
 const submitForm = async () => {
@@ -149,40 +210,31 @@ const submitForm = async () => {
   const formData = new FormData();
   formData.append('judul_project', form.value.judul_project);
   formData.append('deskripsi', form.value.deskripsi);
-  formData.append('is_submit', 1);
-  if (form.value.dokumen) {
-    formData.append('dokumen', form.value.dokumen);
-  }
+  formData.append('is_submit', form.value.is_submit ? '1' : '0');
+  if (form.value.dokumen) formData.append('dokumen', form.value.dokumen);
 
   try {
-    await api.post('/pemohon/permohonan', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    if (isEdit.value) {
+      await api.post(`/pemohon/permohonan/${selectedId.value}`, formData);
+    } else {
+      await api.post('/pemohon/permohonan', formData);
+    }
     showModal.value = false;
     fetchPermohonan();
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menyimpan permohonan');
+    alert(err.response?.data?.message || 'Gagal menyimpan data.');
   } finally {
     submitting.value = false;
   }
 };
 
-const statusBadge = (status) => {
-  const maps = {
-    draft: 'bg-gray-100 text-gray-600',
-    submitted: 'bg-blue-100 text-blue-700',
-    revisi: 'bg-yellow-100 text-yellow-700',
-    approved: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
-  };
-  return maps[status] || 'bg-gray-100 text-gray-600';
-};
+const statusClass = (status) => ({
+  draft: 'bg-slate-100 text-slate-600',
+  submitted: 'bg-blue-100 text-blue-700',
+  revisi: 'bg-amber-100 text-amber-700',
+  approved: 'bg-emerald-100 text-emerald-700',
+  rejected: 'bg-rose-100 text-rose-700',
+}[status] || 'bg-slate-100 text-slate-600');
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('id-ID');
-};
-
-onMounted(() => {
-  fetchPermohonan();
-});
+onMounted(fetchPermohonan);
 </script>

@@ -76,16 +76,22 @@ class PermohonanController extends Controller
         });
     }
 
-    // Detail Single Permohonan
-    public function show(Request $request, $id)
+    public function show($nomor_permohonan)
     {
-        $permohonan = Permohonan::with(['dokumen', 'riwayat.penilai'])
-            ->where('pemohon_id', $request->user()->id)
-            ->findOrFail($id);
+        $permohonan = Permohonan::with(['pemohon', 'dokumen', 'riwayat.user'])
+            ->where('nomor_permohonan', $nomor_permohonan)
+            ->first();
 
-        return response()->json($permohonan);
+        if (!$permohonan) {
+            return response()->json([
+                'message' => 'Data permohonan tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $permohonan
+        ], 200);
     }
-
     // Update / Re-submit Permohonan Revisi
     public function update(Request $request, $id)
     {

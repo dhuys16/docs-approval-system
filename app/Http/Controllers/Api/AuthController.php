@@ -13,32 +13,33 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:pemohon,penilai',
+            'role'     => 'nullable|string|in:pemohon,penilai',
         ]);
 
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role'     => $validated['role'] ?? 'pemohon',
         ]);
 
-        $user->assignRole($validated['role']);
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Registrasi berhasil',
-            'user' => $user->load('roles'),
-            'token' => $token,
+            'message'      => 'Registrasi berhasil',
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
+            'user'         => $user,
         ], 201);
     }
 
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
         ]);
 
@@ -46,33 +47,25 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['Kredensial yang dimasukkan tidak cocok.'],
+                'email' => ['Kredensial yang diberikan tidak cocok dengan data kami.'],
             ]);
         }
+
+        // Hapus token lama jika ada
+        $user->tokens()->delete();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login berhasil',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->getRoleNames()->first(),
-            ],
-            'token' => $token,
+            'token'   => $token,
+            'user'    => $user,
         ]);
     }
 
     public function me(Request $request)
     {
-        $user = $request->user();
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->getRoleNames()->first(),
-        ]);
+        return response()->json($request->user());
     }
 
     public function logout(Request $request)

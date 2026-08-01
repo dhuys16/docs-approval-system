@@ -22,4 +22,9 @@ class Permohonan extends Model
     {
         return $this->hasMany(RiwayatPenilaian::class)->latest();
     }
+
+    public function getRouteKeyName()
+    {
+        return 'nomor_permohonan';
+    }
 }
