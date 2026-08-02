@@ -33,8 +33,8 @@ class PermohonanController extends Controller
         $validated = $request->validate([
             'judul_project' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
-            'is_submit' => 'boolean', // true = langsung submit, false = draft
-            'dokumen' => 'nullable|file|mimes:pdf,jpg,png|max:5000', // Validasi file max 5MB
+            'is_submit' => 'boolean',
+            'dokumen' => 'nullable|file|mimes:pdf,jpg,png|max:5000',
         ]);
 
         return DB::transaction(function () use ($request, $validated) {
@@ -78,8 +78,6 @@ class PermohonanController extends Controller
 
     public function show($identifier)
     {
-        // Gunakan klausa 'where' untuk mencari berdasarkan kolom nomor/kode permohonan
-        // Pastikan nama kolom 'nomor_permohonan' disesuaikan dengan yang ada di database Anda
         $permohonan = Permohonan::with(['dokumen', 'riwayat'])
                         ->where('nomor_permohonan', $identifier)
                         ->first();

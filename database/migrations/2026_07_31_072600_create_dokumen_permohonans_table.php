@@ -13,9 +13,8 @@ return new class extends Migration
             $table->foreignId('permohonan_id')->constrained('permohonans')->onDelete('cascade');
             $table->string('nama_file');
             $table->string('file_path');
-            $table->integer('file_size'); // dalam KB
+            $table->integer('file_size');
             $table->timestamps();
-            
             $table->index('permohonan_id');
         });
     }

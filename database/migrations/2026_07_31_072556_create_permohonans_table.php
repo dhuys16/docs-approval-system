@@ -16,8 +16,6 @@ return new class extends Migration
             $table->text('deskripsi')->nullable();
             $table->enum('status', ['draft', 'submitted', 'revisi', 'approved', 'rejected'])->default('draft');
             $table->timestamps();
-
-            // Indexing penting untuk optimasi query (Bobot nilai 20%)
             $table->index('status');
             $table->index('pemohon_id');
             $table->index('created_at');

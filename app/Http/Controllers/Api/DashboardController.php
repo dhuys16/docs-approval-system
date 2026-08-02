@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Permohonan;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
@@ -15,7 +16,6 @@ class DashboardController extends Controller
         try {
             $user = $request->user();
             
-            // Ambil role secara aman (fallback ke kolom 'role' jika Spatie belum terpasang)
             $role = 'pemohon';
             if (method_exists($user, 'getRoleNames') && $user->getRoleNames()->first()) {
                 $role = $user->getRoleNames()->first();
@@ -28,12 +28,10 @@ class DashboardController extends Controller
             $stats = Cache::remember($cacheKey, 300, function () use ($user, $role) {
                 $query = Permohonan::query();
 
-                // Pemohon hanya melihat data miliknya
                 if ($role === 'pemohon') {
                     $query->where('pemohon_id', $user->id);
                 }
 
-                // Data grafik berdasar waktu (7 hari terakhir)
                 $recent = (clone $query)
                     ->where('created_at', '>=', now()->subDays(6)->startOfDay())
                     ->get(['created_at']);
@@ -51,7 +49,7 @@ class DashboardController extends Controller
                     }
                 }
 
-                return [
+                $data = [
                     'total' => (clone $query)->count(),
                     'draft' => (clone $query)->where('status', 'draft')->count(),
                     'submitted' => (clone $query)->where('status', 'submitted')->count(),
@@ -60,6 +58,15 @@ class DashboardController extends Controller
                     'rejected' => (clone $query)->where('status', 'rejected')->count(),
                     'time_series' => $timeSeries,
                 ];
+
+                if ($role === 'admin') {
+                    $data['users_total'] = User::count();
+                    $data['users_pemohon'] = User::role('pemohon')->count();
+                    $data['users_penilai'] = User::role('penilai')->count();
+                    $data['users_admin'] = User::role('admin')->count();
+                }
+
+                return $data;
             });
 
             return response()->json([
@@ -69,7 +76,6 @@ class DashboardController extends Controller
             ]);
 
         } catch (Throwable $e) {
-            // Jika ada error internal, kembalikan pesan jelas untuk debugging
             return response()->json([
                 'message' => 'Gagal mengambil statistik',
                 'error' => $e->getMessage()

@@ -7,7 +7,6 @@
       </button>
     </div>
 
-    <!-- 1. State Loading: Mencegah layar putih saat Axios sedang mengambil data -->
     <div v-if="loading" class="flex flex-col items-center justify-center py-16">
       <svg class="animate-spin h-10 w-10 text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -16,7 +15,6 @@
       <p class="text-gray-500 font-medium">Memuat data permohonan...</p>
     </div>
 
-    <!-- 2. State Error: Jika API gagal dipanggil (misal 404 atau 500) -->
     <div v-else-if="error" class="text-center py-16 bg-red-50 rounded-lg border border-red-100">
       <p class="text-red-600 text-lg font-medium">{{ error }}</p>
       <button @click="fetchDetail" class="mt-4 px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
@@ -24,7 +22,6 @@
       </button>
     </div>
 
-    <!-- 3. State Sukses: Data berhasil didapat dan siap di-render -->
     <div v-else-if="permohonan">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         
@@ -57,7 +54,6 @@
               </span>
             </div>
 
-            <!-- Tampil jika ada catatan dari Penilai -->
             <div v-if="permohonan.catatan">
               <span class="block text-sm text-gray-500 mb-1">Catatan Penilai</span>
               <div class="bg-gray-50 p-4 rounded border text-gray-700 text-sm">
@@ -105,7 +101,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-// Import file custom Axios buatan Anda yang menyimpan token & baseURL /api
 import api from '../axios.js'; 
 
 const route = useRoute();
@@ -121,13 +116,7 @@ const fetchDetail = async () => {
   error.value = null;
   
   try {
-    // Memanggil API berdasarkan ID yang dikirim melalui URL parameter di Vue Router
-    // Karena axios.js sudah menggunakan baseURL '/api', kita cukup memanggil '/permohonan/{id}'
-    // INFO: Jika URL endpoint backend Anda berbeda (misal: /pengajuan), ubah string ini
     const response = await api.get(`/pemohon/permohonan/${route.params.nomor_permohonan}`);
-    
-    // Laravel Resource biasanya membungkus respons di dalam key 'data'
-    // Kode ini secara pintar mengecek apakah data dibungkus 1x atau 2x
     permohonan.value = response.data.data ? response.data.data : response.data;
     
     console.log("Berhasil! Data Permohonan:", permohonan.value);
@@ -139,18 +128,14 @@ const fetchDetail = async () => {
   }
 };
 
-// Mengecek ekstensi file secara sederhana untuk memutuskan render tag <img> atau <a>
 const isImage = (url) => {
   if (!url) return false;
   return /\.(jpeg|jpg|png|webp)$/i.test(url);
 };
 
-// Fungsi tombol kembali
 const goBack = () => {
   router.back();
 };
-
-// Eksekusi fungsi saat komponen di-load
 onMounted(() => {
   fetchDetail();
 });

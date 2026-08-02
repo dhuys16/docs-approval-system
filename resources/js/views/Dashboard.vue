@@ -1,42 +1,72 @@
 <template>
   <div class="space-y-6">
+    <!-- Bagian Header -->
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-800">Dashboard Overview</h1>
-        <p class="text-xs text-slate-500">Statistik permohonan real-time berdasarkan hak akses Anda (Role: <span class="font-bold uppercase text-indigo-600">{{ role }}</span>)</p>
+        <p class="text-xs text-slate-500">Statistik real-time berdasarkan hak akses Anda (Role: <span class="font-bold uppercase text-indigo-600">{{ role }}</span>)</p>
       </div>
     </div>
 
-    <!-- Cards Stats -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-slate-400 uppercase">Total</p>
-        <p class="text-2xl font-extrabold text-slate-800 mt-1">{{ stats.total || 0 }}</p>
-      </div>
+    <!-- Statistik Pengguna (HANYA MUNCUL UNTUK ADMIN) -->
+    <div v-if="role === 'admin'" class="mb-2">
+      <h2 class="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Statistik Pengguna</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-purple-500 uppercase">Total Pengguna</p>
+          <p class="text-2xl font-extrabold text-purple-600 mt-1">{{ stats.users_total || 0 }}</p>
+        </div>
 
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-slate-400 uppercase">Draft</p>
-        <p class="text-2xl font-extrabold text-slate-500 mt-1">{{ stats.draft || 0 }}</p>
-      </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-slate-500 uppercase">Pemohon</p>
+          <p class="text-2xl font-extrabold text-slate-600 mt-1">{{ stats.users_pemohon || 0 }}</p>
+        </div>
 
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-blue-500 uppercase">Submitted</p>
-        <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ stats.submitted || 0 }}</p>
-      </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-blue-500 uppercase">Penilai</p>
+          <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ stats.users_penilai || 0 }}</p>
+        </div>
 
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-amber-500 uppercase">Revisi</p>
-        <p class="text-2xl font-extrabold text-amber-600 mt-1">{{ stats.revisi || 0 }}</p>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-rose-500 uppercase">Admin</p>
+          <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ stats.users_admin || 0 }}</p>
+        </div>
       </div>
+    </div>
 
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-emerald-500 uppercase">Approved</p>
-        <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ stats.approved || 0 }}</p>
-      </div>
+    <!-- Statistik Permohonan -->
+    <div>
+      <h2 class="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wider">Statistik Permohonan Dokumen</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-slate-400 uppercase">Total</p>
+          <p class="text-2xl font-extrabold text-slate-800 mt-1">{{ stats.total || 0 }}</p>
+        </div>
 
-      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <p class="text-[10px] font-bold text-rose-500 uppercase">Rejected</p>
-        <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ stats.rejected || 0 }}</p>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-slate-400 uppercase">Draft</p>
+          <p class="text-2xl font-extrabold text-slate-500 mt-1">{{ stats.draft || 0 }}</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-blue-500 uppercase">Submitted</p>
+          <p class="text-2xl font-extrabold text-blue-600 mt-1">{{ stats.submitted || 0 }}</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-amber-500 uppercase">Revisi</p>
+          <p class="text-2xl font-extrabold text-amber-600 mt-1">{{ stats.revisi || 0 }}</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-emerald-500 uppercase">Approved</p>
+          <p class="text-2xl font-extrabold text-emerald-600 mt-1">{{ stats.approved || 0 }}</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <p class="text-[10px] font-bold text-rose-500 uppercase">Rejected</p>
+          <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ stats.rejected || 0 }}</p>
+        </div>
       </div>
     </div>
 
@@ -86,13 +116,14 @@ onMounted(async () => {
 });
 
 const renderChart = () => {
-  if (chartInstance) {
+  if (chartInstance)
     chartInstance.destroy();
   }
   if (timeChartInstance) {
     timeChartInstance.destroy();
   }
 
+  // Render Bar Chart (Status Permohonan)
   if (chartCanvas.value) {
     chartInstance = new Chart(chartCanvas.value, {
       type: 'bar',
@@ -108,11 +139,11 @@ const renderChart = () => {
             stats.value.rejected || 0,
           ],
           backgroundColor: [
-            '#cbd5e1', // draft
-            '#3b82f6', // submitted
-            '#f59e0b', // revisi
-            '#10b981', // approved
-            '#f43f5e', // rejected
+            '#cbd5e1',
+            '#3b82f6',
+            '#f59e0b',
+            '#10b981',
+            '#f43f5e',
           ],
           borderRadius: 6
         }]
@@ -137,6 +168,7 @@ const renderChart = () => {
     });
   }
 
+  // Render Line Chart (Tren Waktu)
   if (timeChartCanvas.value && stats.value.time_series) {
     const timeLabels = Object.keys(stats.value.time_series);
     const timeData = Object.values(stats.value.time_series);
@@ -175,5 +207,4 @@ const renderChart = () => {
       }
     });
   }
-};
 </script>

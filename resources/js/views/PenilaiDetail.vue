@@ -257,7 +257,6 @@ const reviewOptions = [
   },
 ];
 
-// Permohonan bisa di-review jika statusnya submitted atau revisi (re-submit)
 const canReview = computed(() => {
   if (!permohonan.value) return false;
   return ['submitted'].includes(permohonan.value.status);
@@ -298,7 +297,6 @@ const submitReview = async () => {
     reviewSuccess.value = response.data.message || 'Penilaian berhasil disimpan!';
     reviewForm.value = { status: '', catatan: '' };
 
-    // Refresh data permohonan agar status & riwayat ter-update
     await fetchDetail();
   } catch (err) {
     console.error("Gagal submit review:", err);

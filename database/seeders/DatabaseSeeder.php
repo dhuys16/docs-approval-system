@@ -1,89 +1,97 @@
 <?php
-
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+use App\Models\User;
+use Faker\Factory as Faker;
+use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat Role Spatie
-        $rolePemohon = Role::firstOrCreate(['name' => 'pemohon']);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        $faker = Faker::create('id_ID');
+        $now = Carbon::now();
+        $password = Hash::make('password123');
+        $roleAdmin = Role::firstOrCreate(['name' => 'admin']);
         $rolePenilai = Role::firstOrCreate(['name' => 'penilai']);
+        $rolePemohon = Role::firstOrCreate(['name' => 'pemohon']);
 
-        // 2. Buat Akun Dummy Utama untuk Login Testing
-        $demoPemohon = User::create([
-            'name' => 'Pemohon Demo',
-            'email' => 'pemohon@test.com',
-            'password' => Hash::make('password123'),
-        ]);
-        $demoPemohon->assignRole($rolePemohon);
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@admin.com'],
+            ['name' => 'Administrator', 'password' => $password]
+        );
+        $admin->assignRole($roleAdmin);
 
-        $demoPenilai = User::create([
-            'name' => 'Penilai Demo',
-            'email' => 'penilai@test.com',
-            'password' => Hash::make('password123'),
-        ]);
-        $demoPenilai->assignRole($rolePenilai);
+        $this->command->info('Memulai Bulk Insert 1000 Pemohon & 1000 Penilai...');
 
-        // 3. Generate 1.000 Pemohon & 1.000 Penilai (Bulk Insert)
-        $now = now();
-        $password = Hash::make('password');
-
-        $pemohons = [];
-        for ($i = 1; $i <= 999; $i++) {
-            $pemohons[] = [
-                'name' => "Pemohon $i",
-                'email' => "pemohon$i@test.com",
+        $pemohonData = [];
+        $penilaiData = [];
+        
+        for ($i = 1; $i <= 1000; $i++) {
+            $pemohonData[] = [
+                'name' => $faker->name,
+                'email' => "pemohon{$i}@test.com",
+                'password' => $password,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+            
+            $penilaiData[] = [
+                'name' => $faker->name,
+                'email' => "penilai{$i}@test.com",
                 'password' => $password,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
         }
-        DB::table('users')->insert($pemohons);
 
-        $penilais = [];
-        for ($i = 1; $i <= 999; $i++) {
-            $penilais[] = [
-                'name' => "Penilai $i",
-                'email' => "penilai$i@test.com",
-                'password' => $password,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
+        User::insert($pemohonData);
+        User::insert($penilaiData);
+        
+        $pemohonIds = User::where('email', 'like', 'pemohon%')->pluck('id')->toArray();
+        $penilaiIds = User::where('email', 'like', 'penilai%')->pluck('id')->toArray();
+
+        $pivotData = [];
+        foreach ($pemohonIds as $id) {
+            $pivotData[] = ['role_id' => $rolePemohon->id, 'model_type' => User::class, 'model_id' => $id];
         }
-        DB::table('users')->insert($penilais);
+        foreach ($penilaiIds as $id) {
+            $pivotData[] = ['role_id' => $rolePenilai->id, 'model_type' => User::class, 'model_id' => $id];
+        }
 
-        // Assign Spatie Roles ke user yang di-insert
-        User::where('email', 'LIKE', 'pemohon%')->get()->each(fn($u) => $u->assignRole($rolePemohon));
-        User::where('email', 'LIKE', 'penilai%')->get()->each(fn($u) => $u->assignRole($rolePenilai));
+        DB::table('model_has_roles')->insert($pivotData);
 
-        // 4. Generate 10.000 Data Permohonan (Chunk Insert)
-        $pemohonIds = User::role('pemohon')->pluck('id')->toArray();
+        $this->command->info('Memulai Bulk Insert 10.000 Permohonan Dokumen (Dicicil per 2000)...');
         $statuses = ['draft', 'submitted', 'revisi', 'approved', 'rejected'];
-
-        $permohonanData = [];
+        $permohonanChunk = [];
+        
         for ($i = 1; $i <= 10000; $i++) {
-            $permohonanData[] = [
-                'nomor_permohonan' => 'PRM-' . str_pad($i, 6, '0', STR_PAD_LEFT),
-                'pemohon_id' => $pemohonIds[array_rand($pemohonIds)],
-                'judul_project' => "Permohonan Dokumen Kelayakan #$i",
-                'deskripsi' => "Deskripsi permohonan dokumen kelayakan ke-$i",
-                'status' => $statuses[array_rand($statuses)],
-                'created_at' => now()->subDays(rand(1, 90)),
-                'updated_at' => $now,
+            $randomDate = $faker->dateTimeBetween('-1 year', 'now');
+            $nomorPermohonan = 'PRM-' . $randomDate->format('Ymd') . '-' . str_pad($i, 5, '0', STR_PAD_LEFT);
+
+            $permohonanChunk[] = [
+                'nomor_permohonan' => $nomorPermohonan,
+                'pemohon_id'       => $faker->randomElement($pemohonIds),
+                'judul_project'    => "permohonan ke-{$i}",
+                'deskripsi'        => "deskripsi permohonan ke-{$i}",
+                'status'           => $faker->randomElement($statuses),
+                'created_at'       => $randomDate,
+                'updated_at'       => $randomDate,
             ];
 
-            // Direct Insert per 1000 data agar tidak out of memory
-            if ($i % 1000 === 0) {
-                DB::table('permohonans')->insert($permohonanData);
-                $permohonanData = [];
+            if ($i % 2000 == 0) {
+                DB::table('permohonans')->insert($permohonanChunk);
+                $permohonanChunk = []; 
+                $this->command->info("Berhasil insert {$i} permohonan...");
             }
         }
+        
+        $this->command->info('Proses Seeding 12.000+ Data Berhasil Diselesaikan dengan Cepat!');
     }
 }

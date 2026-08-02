@@ -55,7 +55,6 @@ class AuthController extends Controller
             ]);
         }
 
-        // Hapus token lama jika ada
         $user->tokens()->delete();
 
         $token = $user->createToken('auth_token')->plainTextToken;

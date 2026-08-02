@@ -188,12 +188,8 @@ const fetchPermohonan = async () => {
     const res = await api.get(`/pemohon/permohonan/${route.params.nomor_permohonan}`);
     const data = res.data.data ? res.data.data : res.data;
     permohonan.value = data;
-
-    // Isi form dengan data existing
     form.value.judul_project = data.judul_project || '';
     form.value.deskripsi = data.deskripsi || '';
-
-    // Cek apakah status masih bisa di-edit
     if (!['draft', 'revisi'].includes(data.status)) {
       loadError.value = `Permohonan dengan status "${data.status}" tidak dapat diedit.`;
     }

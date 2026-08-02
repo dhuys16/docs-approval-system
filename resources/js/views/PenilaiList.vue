@@ -47,7 +47,6 @@
         </thead>
         <tbody class="divide-y divide-slate-100">
           <tr v-for="item in pagination.data" :key="item.id" class="hover:bg-slate-50 transition">
-            <!-- Link Nomor Permohonan -->
             <td class="p-4 font-bold text-indigo-600">
               <router-link :to="`/penilai/permohonan/${item.nomor_permohonan}`" class="hover:underline">
                 {{ item.nomor_permohonan }}
@@ -76,7 +75,6 @@
               </span>
             </td>
             <td class="p-4 text-center">
-              <!-- Hanya Tombol Detail -->
               <router-link
                 :to="`/penilai/permohonan/${item.nomor_permohonan}`"
                 class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-sm transition inline-block text-[11px]"

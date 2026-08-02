@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PenilaiController;
 use App\Http\Controllers\Api\PermohonanController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Public Routes
@@ -15,7 +16,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Route khusus Pemohon (Tambahkan middleware role jika ada)
     Route::prefix('pemohon')->middleware('role:pemohon')->group(function () {
         Route::get('/permohonan', [PermohonanController::class, 'index']);
         Route::post('/permohonan', [PermohonanController::class, 'store']);
@@ -23,7 +23,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/permohonan/{nomor_permohonan}', [PermohonanController::class, 'update']);
     });
 
-    // Route khusus Penilai (Tambahkan middleware role jika ada)
     Route::prefix('penilai')->middleware('role:penilai')->group(function () {
         Route::get('/permohonan', [PenilaiController::class, 'index']);
         Route::get('/permohonan/export', [PenilaiController::class, 'exportExcel']);
@@ -32,6 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/histori', [PenilaiController::class, 'historiPenilaian']);
     });
 
-    // Dashboard Stats (Bisa diakses Pemohon & Penilai)
     Route::get('/dashboard/stats', [DashboardController::class, 'index']);
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::put('/users/{user}/role', [UserController::class, 'updateRole']);
+    });
 });

@@ -8,6 +8,7 @@ import PermohonanDetail from './views/PermohonanDetail.vue';
 import PermohonanEdit from './views/PermohonanEdit.vue';
 import PenilaiList from './views/PenilaiList.vue';
 import PenilaiDetail from './views/PenilaiDetail.vue';
+import UserManagement from './views/UserManagement.vue';
 
 const routes = [
   { path: '/login', name: 'Login', component: Login },
@@ -19,6 +20,7 @@ const routes = [
   { path: '/permohonan/:nomor_permohonan/edit', name: 'PermohonanEdit', component: PermohonanEdit },
   { path: '/penilai', name: 'PenilaiList', component: PenilaiList },
   { path: '/penilai/permohonan/:nomor_permohonan', name: 'PenilaiDetail', component: PenilaiDetail },
+  { path: '/users', name: 'UserManagement', component: UserManagement, meta: { requiresAuth: true } },
 ];  
 
 const router = createRouter({

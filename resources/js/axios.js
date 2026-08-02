@@ -8,7 +8,6 @@ const api = axios.create({
     },
 });
 
-// Otomatis tempel Token ke Header Authorization jika user sudah login
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {

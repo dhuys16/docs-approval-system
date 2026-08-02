@@ -14,8 +14,6 @@ class RoleMiddleware
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
-
-        // Mendukung Spatie HasRoles dan juga fallback ke kolom 'role'
         $hasRole = false;
         if (method_exists($user, 'hasRole')) {
             $hasRole = $user->hasRole($role);

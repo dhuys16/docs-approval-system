@@ -44,18 +44,6 @@
           />
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Daftar Sebagai</label>
-          <select
-            v-model="form.role"
-            required
-            class="w-full border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          >
-            <option value="pemohon">Pemohon</option>
-            <option value="penilai">Penilai</option>
-          </select>
-        </div>
-
         <button
           type="submit"
           :disabled="loading"
